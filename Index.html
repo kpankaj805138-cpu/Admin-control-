@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kerala Lottery - Admin Panel</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #0a1128; color: #fff; margin: 0; padding: 15px; }
+  .container { max-width: 950px; margin: auto; background: #101a3c; padding: 20px; border-radius: 12px; border: 1px solid #ffd21c; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+  h2 { color: #ffd21c; text-align: center; margin-bottom: 20px; font-size: 20px; }
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; color: #8292c4; margin-bottom: 4px; font-weight: bold; }
+  input, select { width: 100%; padding: 9px; border-radius: 6px; border: 1px solid #23356e; background: #050914; color: #fff; font-size: 13px; box-sizing: border-box; outline: none; }
+  input:focus, select:focus { border-color: #ffd21c; }
+  .btn { background: #ffd21c; color: #0a1128; font-weight: bold; padding: 10px; border: none; width: 100%; border-radius: 6px; cursor: pointer; font-size: 14px; margin-top: 8px; }
+  .btn:hover { background: #ffca00; }
+  .btn-cancel { background: #d71920; color: #fff; display: none; margin-top: 5px; }
+  #status-msg { text-align: center; margin-top: 10px; font-weight: bold; font-size: 13px; }
+  .hidden { display: none; }
+  .login-box { text-align: center; padding: 30px 10px; max-width: 400px; margin: auto; }
+  
+  .control-box { background: #182652; border: 1px dashed #ffd21c; padding: 12px; border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .control-box span { font-size: 14px; color: #4ade80; font-weight: bold; }
+  
+  .table-container { margin-top: 25px; overflow-x: auto; max-height: 450px; border: 1px solid #23356e; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid #23356e; border-right: 1px solid #23356e; white-space: nowrap; }
+  th { background: #182652; color: #ffd21c; position: sticky; top: 0; z-index: 2; font-weight: bold; }
+  tr:hover { background: rgba(255, 210, 28, 0.05); }
+  .action-btn { padding: 4px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: none; font-weight: bold; margin-right: 4px; }
+  .edit-btn { background: #3b82f6; color: #fff; }
+  .delete-btn { background: #ef4444; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div id="login-section" class="login-box">
+    <h2>🔐 Admin Login</h2>
+    <div class="form-group" style="text-align: left;">
+      <label>Username:</label>
+      <input type="text" id="admin-user" placeholder="Enter Username">
+    </div>
+    <div class="form-group" style="text-align: left; margin-top: 10px;">
+      <label>Password:</label>
+      <input type="password" id="admin-password" placeholder="Enter Password">
+    </div>
+    <button class="btn" onclick="checkLogin()" style="margin-top: 15px;">Login</button>
+    <p id="login-error" style="color: #d71920; font-size: 13px; margin-top: 10px;"></p>
+  </div>
+
+  <div id="admin-dashboard" class="hidden">
+    <h2>🛠️ Admin Panel & Google Sheet Spreadsheet</h2>
+    
+    <div class="control-box">
+      <div>
+        <label style="color: #ffd21c; margin-bottom: 2px;">💳 Display UPI ID:</label>
+        <span id="display-upi">Loading...</span>
+      </div>
+      <button onclick="updateUpi()" style="background: #ffd21c; color: #0a1128; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Change UPI</button>
+    </div>
+
+    <div class="control-box">
+      <div>
+        <label style="color: #ffd21c; margin-bottom: 2px;">📞 Helpline Number:</label>
+        <span id="display-helpline">Loading...</span>
+      </div>
+      <button onclick="updateHelpline()" style="background: #ffd21c; color: #0a1128; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 12px;">Change Helpline</button>
+    </div>
+    
+    <form id="admin-form" style="background: #0d1630; padding: 15px; border-radius: 8px; border: 1px solid #23356e; margin-bottom: 20px;">
+      <h3 id="form-title" style="color: #ffd21c; font-size: 15px; margin-top: 0; margin-bottom: 12px;">➕ Add New Winner Record</h3>
+      <input type="hidden" id="edit-index" value="">
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label>Winner Name:</label>
+          <input type="text" id="admin-name" placeholder="Full Name" required>
+        </div>
+        <div class="form-group">
+          <label>Mobile Number:</label>
+          <input type="tel" id="admin-mobile" maxlength="10" placeholder="10 Digit Mobile" required>
+        </div>
+        <div class="form-group">
+          <label>Lottery Number:</label>
+          <input type="text" id="admin-ticket" placeholder="e.g. KL-584920" required>
+        </div>
+        <div class="form-group">
+          <label>Prize Level:</label>
+          <select id="admin-prize" required>
+            <option value="1st Prize">1st Prize</option>
+            <option value="2nd Prize">2nd Prize</option>
+            <option value="3rd Prize">3rd Prize</option>
+            <option value="4th Prize">4th Prize</option>
+            <option value="5th Prize">5th Prize</option>
+            <option value="6th Prize">6th Prize</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Winning Amount:</label>
+        <input type="text" id="admin-amount" placeholder="e.g. Rs 25,00,00,000/-" required>
+      </div>
+
+      <button type="submit" class="btn" id="submit-btn">Add Record to Google Sheet</button>
+      <button type="button" class="btn btn-cancel" id="cancel-btn" onclick="resetForm()">Cancel Edit</button>
+    </form>
+    <div id="status-msg"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <h3 style="color: #ffd21c; font-size: 15px; margin: 0;">📊 Live Google Sheet Spreadsheet View</h3>
+      <button onclick="loadTableData()" style="background: #182652; color: #ffd21c; border: 1px solid #ffd21c; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold;">🔄 Refresh Table</button>
+    </div>
+
+    <div class="table-container">
+      <table id="sheet-table">
+        <thead>
+          <tr>
+            <th>Actions</th>
+            <th>Lottery Number</th>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Prize</th>
+            <th>Winning Amount</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="6" style="text-align:center; padding: 15px; color: #8292c4;">Loading data from Google Sheet...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const CORRECT_USER = "Rupa";
+const CORRECT_PASS = "Ratkaraja"; 
+// Naya SheetDB URL update kar diya gaya hai
+const apiUrl = 'https://sheetdb.io/api/v1/9wau2ejgv5h7u';
+
+function checkLogin() {
+    const enteredUser = document.getElementById('admin-user').value.trim();
+    const enteredPass = document.getElementById('admin-password').value.trim();
+    const errorMsg = document.getElementById('login-error');
+    
+    if(enteredUser === CORRECT_USER && enteredPass === CORRECT_PASS) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadTableData();
+        loadUpi();
+        loadHelpline();
+    } else {
+        errorMsg.innerText = "❌ Galat Username ya Password! Dobara koshish karein.";
+    }
+}
+
+let allSheetData = [];
+
+function loadUpi() {
+    let savedUpi = localStorage.getItem('kerala_upi_id') || 'keralalottery@paytm (Default)';
+    document.getElementById('display-upi').innerText = savedUpi;
+}
+
+function updateUpi() {
+    let newUpi = prompt("Nayi UPI ID darj karein:", localStorage.getItem('kerala_upi_id') || '');
+    if(newUpi !== null && newUpi.trim() !== "") {
+        localStorage.setItem('kerala_upi_id', newUpi.trim());
+        loadUpi();
+        alert('UPI ID successfully update ho gayi!');
+    }
+}
+
+function loadHelpline() {
+    let savedHelpline = localStorage.getItem('kerala_helpline_no') || '+91 9876543210 (Default)';
+    document.getElementById('display-helpline').innerText = savedHelpline;
+}
+
+function updateHelpline() {
+    let newHelpline = prompt("Naya Helpline Number darj karein:", localStorage.getItem('kerala_helpline_no') || '');
+    if(newHelpline !== null && newHelpline.trim() !== "") {
+        localStorage.setItem('kerala_helpline_no', newHelpline.trim());
+        loadHelpline();
+        alert('Helpline number successfully update ho gaya!');
+    }
+}
+
+function getField(row, keys) {
+    for (let k of keys) {
+        if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+        let foundKey = Object.keys(row).find(item => item.toLowerCase() === k.toLowerCase());
+        if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null && row[foundKey] !== '') return row[foundKey];
+    }
+    return '';
+}
+
+function loadTableData() {
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 15px; color: #ffd21c;">Refreshing data...</td></tr>';
+
+    fetch(apiUrl)
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`SheetDB Error (${res.status}): Server responded with error.`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        allSheetData = data || [];
+        tbody.innerHTML = '';
+        if(allSheetData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #8292c4;">No data found in Google Sheet.</td></tr>';
+            return;
+        }
+        allSheetData.forEach((row, index) => {
+            let ticketNo = getField(row, ['Lottery Number', 'ticket', 'LotteryNumber']);
+            let prizeVal = getField(row, ['Prize', 'Prize Level']);
+            let amountVal = getField(row, ['Winning Amount', 'Amount']);
+            let nameVal = getField(row, ['name', 'Name', 'Winner Name', 'winner_name', 'Full Name']);
+            let mobileVal = getField(row, ['mobile', 'Mobile', 'Phone', 'Mobile Number']);
+
+            let tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                  <button class="action-btn edit-btn" onclick="editRecord(${index})">Edit</button>
+                  <button class="action-btn delete-btn" onclick="deleteRecord('${encodeURIComponent(ticketNo)}')">Delete</button>
+                </td>
+                <td><b>${ticketNo}</b></td>
+                <td>${nameVal}</td>
+                <td>${mobileVal}</td>
+                <td style="color: #4ade80;">${prizeVal}</td>
+                <td style="color: #ffd21c;">${amountVal}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(err => {
+        console.error("Fetch Error:", err);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: #d71920;">${err.message}</td></tr>`;
+    });
+}
+
+function editRecord(index) {
+    const row = allSheetData[index];
+    document.getElementById('edit-index').value = index;
+    document.getElementById('admin-name').value = getField(row, ['name', 'Name', 'Winner Name', 'winner_name', 'Full Name']);
+    document.getElementById('admin-mobile').value = getField(row, ['mobile', 'Mobile', 'Phone', 'Mobile Number']);
+    document.getElementById('admin-ticket').value = getField(row, ['Lottery Number', 'ticket', 'LotteryNumber']);
+    document.getElementById('admin-prize').value = getField(row, ['Prize', 'Prize Level']) || '1st Prize';
+    document.getElementById('admin-amount').value = getField(row, ['Winning Amount', 'Amount']);
+
+    document.getElementById('form-title').innerText = '✏️ Edit Winner Record';
+    document.getElementById('submit-btn').innerText = 'Update Record';
+    document.getElementById('cancel-btn').style.display = 'block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function resetForm() {
+    document.getElementById('admin-form').reset();
+    document.getElementById('edit-index').value = '';
+    document.getElementById('form-title').innerText = '➕ Add New Winner Record';
+    document.getElementById('submit-btn').innerText = 'Add Record to Google Sheet';
+    document.getElementById('cancel-btn').style.display = 'none';
+}
+
+function deleteRecord(encodedTicketNo) {
+    let ticketNo = decodeURIComponent(encodedTicketNo);
+    if(!confirm('Kya aap is record ko delete karna chahte hain?')) return;
+
+    fetch(`${apiUrl}/Lottery%20Number/${encodeURIComponent(ticketNo)}`, {
+        method: 'DELETE',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert('Record successfully delete ho gaya!');
+        loadTableData();
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Delete karne me error aaya.');
+    });
+}
+
+document.getElementById('admin-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const editIdx = document.getElementById('edit-index').value;
+    const name = document.getElementById('admin-name').value.trim();
+    const mobile = document.getElementById('admin-mobile').value.trim();
+    const ticket = document.getElementById('admin-ticket').value.trim();
+    const prize = document.getElementById('admin-prize').value;
+    const amount = document.getElementById('admin-amount').value.trim();
+    const statusMsg = document.getElementById('status-msg');
+    const submitBtn = document.getElementById('submit-btn');
+
+    submitBtn.disabled = true;
+    statusMsg.style.color = '#ffd21c';
+
+    const postData = {
+        "Lottery Number": ticket,
+        "Prize": prize,
+        "Winning Amount": amount,
+        "name": name,
+        "Name": name,
+        "Winner Name": name,
+        "mobile": mobile,
+        "Mobile": mobile
+    };
+
+    if(editIdx !== "") {
+        statusMsg.innerText = 'Updating record in Google Sheet...';
+        const originalTicket = getField(allSheetData[editIdx], ['Lottery Number', 'ticket', 'LotteryNumber']);
+
+        fetch(`${apiUrl}/Lottery%20Number/${encodeURIComponent(originalTicket)}`, {
+            method: 'DELETE',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+        })
+        .then(() => {
+            return fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: postData })
+            });
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.text().then(text => { throw new Error(text || 'HTTP error ' + res.status); });
+            }
+            return res.json();
+        })
+        .then(data => {
+            statusMsg.style.color = '#4cd137';
+            statusMsg.innerText = '✅ Record successfully updated!';
+            resetForm();
+            submitBtn.disabled = false;
+            loadTableData();
+        })
+        .catch(err => {
+            console.error(err);
+            statusMsg.style.color = '#d71920';
+            statusMsg.innerText = '❌ Error: ' + err.message;
+            submitBtn.disabled = false;
+        });
+
+    } else {
+        statusMsg.innerText = 'Saving to Google Sheet...';
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: postData })
+        })
+        .then(res => {
+            if (!res.ok) {
+                return res.text().then(text => { throw new Error(text || 'HTTP error ' + res.status); });
+            }
+            return res.json();
+        })
+        .then(data => {
+            statusMsg.style.color = '#4cd137';
+            statusMsg.innerText = '✅ Record successfully added!';
+            resetForm();
+            submitBtn.disabled = false;
+            loadTableData();
+        })
+        .catch(err => {
+            console.error(err);
+            statusMsg.style.color = '#d71920';
+            statusMsg.innerText = '❌ Error: ' + err.message;
+            submitBtn.disabled = false;
+        });
+    }
+});
+</script>
+
+</body>
+      </html>
